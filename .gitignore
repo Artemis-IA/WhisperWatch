@@ -5,13 +5,16 @@
 .env.test
 .env.production
 
-# Ignore les fichiers de secrets
+# Clés et certificats
 *.key
 *.pem
 
-# Ignore les fichiers de cache
+# Fichiers de cache
 .cache/
-pycache/
+__pycache__/
+*.pyc
+*.pyo
+
 
 
 # Ignore les dossiers générés par Node.js
@@ -44,3 +47,12 @@ ignorer les bases de donées
 *.sqlite
 *.db
 *.sql
+
+# Ignorer les fichiers médias
+*.mp3
+*.webm
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
