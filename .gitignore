@@ -1,0 +1,46 @@
+# Ignore les fichiers d'environnement
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Ignore les fichiers de secrets
+*.key
+*.pem
+
+# Ignore les fichiers de cache
+.cache/
+pycache/
+
+
+# Ignore les dossiers générés par Node.js
+node_modules/
+dist/
+
+# Ignore les fichiers de sauvegarde
+*.bak
+*.swp
+*~
+
+# Ignore les fichiers de configuration spécifiques à l'IDE
+.idea/
+.vscode/
+
+# Ignore les fichiers de logs
+logs/
+*.log
+
+# Ignore les fichiers de build
+build/
+out/
+
+# Ignore les fichiers de configuration de l'éditeur
+.editorconfig
+.eslintrc
+.prettierrc
+
+ignorer les bases de donées
+*.sqlite
+*.db
+*.sql

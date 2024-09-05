@@ -1,0 +1,49 @@
+# db/docker-compose.yml
+# version: '3.8'
+services:
+  dbsql:
+    image: postgres:13
+    container_name: db_postgres
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    env_file:
+      - .env
+    networks:
+      - shared_network
+
+  redis:
+    image: redis:alpine
+    container_name: redis_cache
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - shared_network
+
+  minio:
+    image: minio/minio
+    container_name: minio
+    environment:
+      MINIO_ROOT_USER: minioadmin  # Clé d'accès par défaut
+      MINIO_ROOT_PASSWORD: minioadmin  # Clé secrète par défaut
+    ports:
+      - "9000:9000"  # Port pour accéder à l'interface web et aux API
+      - "9001:9001"  # Console d'administration (facultatif)
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - shared_network
+
+networks:
+  shared_network:
+    external: true  # Réseau partagé
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local

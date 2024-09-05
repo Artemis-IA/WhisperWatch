@@ -1,0 +1,83 @@
+# app/docker-compose.yml
+# version: '3.8'
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: ./app/Dockerfile
+    container_name: fastapi_web
+    command: sh -c "alembic -c /app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8008"
+    volumes:
+      - ./src:/app
+      - ../alembic.ini:/app/alembic.ini  # Montez directement alembic.ini
+      - ../alembic:/app/alembic          # Montez le répertoire alembic explicitement
+      - app-data:/app/data  # Volume persistant pour les textes extraits des vidéos
+    ports:
+      - "8008:8008"
+    env_file:
+      - .env
+    networks:
+      - shared_network
+
+
+  celery_worker:
+    build:
+      context: ..
+      dockerfile: ./app/Dockerfile
+    container_name: celery_worker
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && celery -A app.core.celery_app.celery_app worker --loglevel=info"
+    volumes:
+      - ./src:/app
+    env_file:
+      - .env
+    networks:
+      - shared_network
+
+  celery_beat:
+    build:
+      context: ..
+      dockerfile: ./app/Dockerfile
+    container_name: celery_beat
+    command: sh -c "pip install --no-cache-dir -r requirements.txt && celery -A app.core.celery_app.celery_app beat --loglevel=info"
+    volumes:
+      - ./src:/app
+    env_file:
+      - .env
+    networks:
+      - shared_network
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus_api
+    
+    volumes:
+      - ../prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - shared_network
+
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - shared_network
+    depends_on:
+      - prometheus
+
+volumes:
+  app-data:
+    driver: local  # Stockage pour les textes extraits des vidéos
+  grafana-storage:
+
+networks:
+  shared_network:
+    external: true  # Utilise le réseau partagé
