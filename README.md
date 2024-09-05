@@ -1,6 +1,3 @@
-Voici un fichier `README.md` complet pour votre projet **WhisperWatch** :
-
-```md
 # WhisperWatch
 
 **WhisperWatch** est un projet innovant de veille technique qui permet de scraper des vidéos YouTube, de transcrire leur contenu audio en texte, et de stocker les métadonnées ainsi que les transcriptions dans une base de données. Il se concentre sur des sujets techniques tels que le Cloud et le MLOps, facilitant ainsi la veille technologique à partir de vidéos YouTube.
