@@ -48,11 +48,5 @@ ignorer les bases de donées
 *.db
 *.sql
 
-# Ignorer les fichiers médias
-*.mp3
-*.webm
-*.mp4
-*.avi
-*.mov
-*.wmv
-*.flv
+ignorer les downloads
+downloads/
