@@ -20,3 +20,6 @@ passlib
 alembic
 bcrypt
 python-jose
+
+# client
+streamlit
