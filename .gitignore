@@ -43,10 +43,12 @@ out/
 .eslintrc
 .prettierrc
 
-ignorer les bases de donées
+# ignorer les bases de donées
 *.sqlite
 *.db
 *.sql
 
-ignorer les downloads
+# ignorer les downloads
 downloads/
+db/.env
+app/.env
