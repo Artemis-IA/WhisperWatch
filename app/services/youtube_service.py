@@ -19,3 +19,25 @@ class YouTubeService:
         )
         response = request.execute()
         return response.get("items", [])
+    
+    def extract_video_id(self, youtube_url):
+        """Extract video ID from a YouTube URL."""
+        return youtube_url.split("v=")[1]
+
+    def get_video_details(self, youtube_url):
+        """Fetch details like title, description, published date for a video."""
+        video_id = self.extract_video_id(youtube_url)
+        request = self.youtube.videos().list(
+            part="snippet,contentDetails",
+            id=video_id
+        )
+        response = request.execute()
+
+        if response["items"]:
+            video_info = response["items"][0]["snippet"]
+            return {
+                "title": video_info["title"],
+                "description": video_info["description"],
+                "published_at": video_info["publishedAt"]
+            }
+        return None

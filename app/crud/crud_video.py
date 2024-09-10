@@ -6,10 +6,12 @@ from app.schemas.video import VideoCreate, VideoUpdate
 from app.services.download_service import DownloadService
 from app.services.transcription_service import TranscriptionService
 from app.services.s3_service import S3Service
+from app.services.youtube_service import YouTubeService
 import os
 import datetime
 
 download_service = DownloadService()
+youtube_service = YouTubeService()
 transcription_service = TranscriptionService()
 s3_service = S3Service()
 
@@ -20,6 +22,14 @@ def make_naive(dt):
     return dt
 
 async def create_video(db: AsyncSession, video: VideoCreate):
+    # Récupérer les métadonnées de la vidéo
+    video_details = youtube_service.get_video_details(video.video_url)
+
+    if video_details:
+        video.title = video_details["title"]
+        video.description = video_details["description"]
+        video.published_at = make_naive(video_details["published_at"])
+
     # Téléchargement de l'audio de la vidéo
     audio_file = download_service.download_audio(video.video_url)
 
