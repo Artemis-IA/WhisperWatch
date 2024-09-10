@@ -17,8 +17,7 @@ Base = declarative_base()
 
 def init_db():
     """ Initialize the database by creating all tables """
-    Base.metadata.create_all(bind=sync_engine)  # Use the sync engine for schema creation
-
+    Base.metadata.create_all(bind=sync_engine)
 async def get_db():
     """ Dependency to get DB session for async queries """
     async_session = sessionmaker(
@@ -26,5 +25,3 @@ async def get_db():
     )
     async with async_session() as session:
         yield session
-
-

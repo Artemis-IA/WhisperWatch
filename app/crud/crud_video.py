@@ -63,12 +63,12 @@ async def get_video(db: AsyncSession, video_id: int):
     result = await db.execute(select(Video).where(Video.id == video_id))
     return result.scalars().first()
 
-async def update_video(db: AsyncSession, db_video: Video, video_update: VideoUpdate):
+async def update_video(db: AsyncSession, video: Video, video_update: VideoUpdate):
     for var, value in vars(video_update).items():
-        setattr(db_video, var, value) if value else None
+        setattr(video, var, value) if value else None
     await db.commit()
-    await db.refresh(db_video)
-    return db_video
+    await db.refresh(video)
+    return video
 
 async def delete_video(db: AsyncSession, video_id: int):
     video = await get_video(db, video_id)

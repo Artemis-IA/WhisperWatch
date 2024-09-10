@@ -23,3 +23,6 @@ class UserDB(UserBase):
 
     class Config:
         from_attributes = True  # For ORM compatibility
+
+class UserResponse(UserBase):
+    id: int

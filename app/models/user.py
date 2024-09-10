@@ -8,8 +8,9 @@ class User(SQLAlchemyBaseUserTable[int], Base):
     __tablename__ = "users"  # Table name
 
     id = Column(Integer, primary_key=True, index=True)
+    full_name = Column(String, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     is_superuser = Column(Boolean, default=False, nullable=False)
-    full_name = Column(String, index=True)  # Additional field for full name
+    is_verified = Column(Boolean, default=False, nullable=False)

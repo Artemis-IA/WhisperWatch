@@ -20,6 +20,7 @@ passlib
 alembic
 bcrypt
 python-jose
+sqlmodel
 
 # client
 streamlit
