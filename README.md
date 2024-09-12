@@ -110,11 +110,11 @@ Pour ajouter une nouvelle vidéo :
 curl -X POST "http://127.0.0.1:8000/api/" \
      -H "Content-Type: application/json" \
      -d '{
-           "youtube_id": "a_qTAJMXk9A",
-           "title": "Introduction to MLOps",
-           "description": "A comprehensive guide to MLOps.",
+           "youtube_id": "cOE2miIh1_o",
+           "title": "title",
+           "description": "A comprehensive guide to.",
            "published_at": "2024-09-05T12:00:00",
-           "video_url": "https://www.youtube.com/watch?v=a_qTAJMXk9A"
+           "video_url": "https://www.youtube.com/watch?v=cOE2miIh1_o"
          }'
 ```
 
