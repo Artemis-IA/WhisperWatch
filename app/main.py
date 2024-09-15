@@ -1,8 +1,8 @@
 # app/main.py
 from fastapi import FastAPI
-from app.api import auth, video_api, keywords_api
-from app.schemas.user import UserCreate, UserDB, UserUpdate
-from app.db.database import init_db
+from api import auth, video_api, keywords_api
+from schemas.user import UserCreate, UserDB, UserUpdate
+from db.database import init_db
 from prometheus_fastapi_instrumentator import Instrumentator
 
 app = FastAPI()

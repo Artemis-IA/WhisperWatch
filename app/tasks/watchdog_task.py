@@ -1,14 +1,13 @@
 
 # app/tasks/watchdog_task.py
-# app/tasks/watchdog_task.py
 import json
 from celery import shared_task
-from app.db.database import get_db
-from app.crud.crud_video import get_video, create_video, VideoCreate
-from app.services.youtube_service import YouTubeService
-from app.services.download_service import DownloadService
-from app.services.transcription_service import TranscriptionService
-from app.services.s3_service import S3Service
+from db.database import get_db
+from crud.crud_video import get_video, create_video, VideoCreate
+from services.youtube_service import YouTubeService
+from services.download_service import DownloadService
+from services.transcription_service import TranscriptionService
+from services.s3_service import S3Service
 import logging
 import os
 

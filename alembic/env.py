@@ -4,10 +4,10 @@ from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 from alembic import context
 
-from app.db.database import Base
-from app.models import user, video
+from db.database import Base
+from models import user, video
 from sqlalchemy import create_engine
-from app.core.config import settings
+from core.config import settings
 import os
 
 # Ce fichier config d'Alembic accède au .ini fichier utilisé.

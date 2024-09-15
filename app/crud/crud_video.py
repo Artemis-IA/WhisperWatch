@@ -1,12 +1,12 @@
 # app/crud/crud_video.py
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.models.video import Video
-from app.schemas.video import VideoCreate, VideoUpdate
-from app.services.download_service import DownloadService
-from app.services.transcription_service import TranscriptionService
-from app.services.s3_service import S3Service
-from app.services.youtube_service import YouTubeService
+from models.video import Video
+from schemas.video import VideoCreate, VideoUpdate
+from services.download_service import DownloadService
+from services.transcription_service import TranscriptionService
+from services.s3_service import S3Service
+from services.youtube_service import YouTubeService
 import os
 import datetime
 
@@ -21,45 +21,49 @@ def make_naive(dt):
         return dt.replace(tzinfo=None)
     return dt
 
+# app/crud/crud_video.py
 async def create_video(db: AsyncSession, video: VideoCreate):
-    # Récupérer les métadonnées de la vidéo
+    # Extract the YouTube ID from the video URL
+    youtube_id = youtube_service.extract_video_id(video.video_url)
+
+    # Fetch video details from YouTube
     video_details = youtube_service.get_video_details(video.video_url)
+    
+    if not video_details:
+        raise ValueError("Unable to fetch video details from YouTube.")
 
-    if video_details:
-        video.title = video_details["title"]
-        video.description = video_details["description"]
-        video.published_at = make_naive(video_details["published_at"])
+    # Extract title, description, and published_at
+    title = video_details["title"]
+    description = video_details["description"]
+    published_at = make_naive(datetime.datetime.fromisoformat(video_details["published_at"].replace("Z", "+00:00")))
 
-    # Téléchargement de l'audio de la vidéo
+    # Proceed with downloading and processing the video
     audio_file = download_service.download_audio(video.video_url)
-
-    # Transcription de l'audio
     transcript = transcription_service.transcribe_audio(audio_file)
 
-    # Sauvegarde de la transcription dans un fichier local
-    transcript_file_path = f"{video.youtube_id}.txt"
+    # Save and upload files
+    transcript_file_path = f"{youtube_id}.txt"
     with open(transcript_file_path, "w") as f:
         f.write(transcript)
 
-    # Téléchargement de l'audio et de la transcription sur MinIO
-    audio_url = s3_service.upload_file(audio_file, f'audio/{video.youtube_id}.mp3')
-    transcript_url = s3_service.upload_file(transcript_file_path, f'transcripts/{video.youtube_id}.txt')
+    audio_url = s3_service.upload_file(audio_file, f'audio/{youtube_id}.mp3')
+    transcript_url = s3_service.upload_file(transcript_file_path, f'transcripts/{youtube_id}.txt')
 
-    # Suppression des fichiers locaux après le téléchargement
     os.remove(audio_file)
     os.remove(transcript_file_path)
 
-    # Création de l'enregistrement vidéo dans la base de données
+    # Create the Video record in the database
     db_video = Video(
-        youtube_id=video.youtube_id,
-        title=video.title,
-        description=video.description,
-        published_at=make_naive(video.published_at),  # Conversion en offset-naive
+        youtube_id=youtube_id,
+        title=title,
+        description=description,
+        published_at=published_at,
         transcript=transcript,
         video_url=video.video_url,
         audio_file=audio_url,
-        transcript_file=transcript_url,
+        transcript_file=transcript_url
     )
+    
     db.add(db_video)
     await db.commit()
     await db.refresh(db_video)

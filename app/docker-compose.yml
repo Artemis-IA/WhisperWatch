@@ -1,63 +1,69 @@
 # app/docker-compose.yml
-# version: '3.8'
-
 services:
-  web:
-    build:
-      context: ..
-      dockerfile: ./app/Dockerfile
-    container_name: fastapi_web
-    command: sh -c "alembic -c /app/alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8008"
+  # web:
+  #   build:
+  #     context: ..
+  #     dockerfile: ./app/Dockerfile
+  #   container_name: fastapi_web
+  #   restart: always
+  #   command: uvicorn main:app --host 0.0.0.0 --port 8008
+  #   environment:
+  #     - PYTHONPATH=/app
+  #   volumes:
+  #     - ../app:/app
+  #     - ../alembic.ini:/app/alembic.ini
+  #     - ../alembic:/app/alembic
+  #   ports:
+  #     - "8008:8008"
+  #   env_file:
+  #     - ../app/.env
+  #   networks:
+  #     - shared_network
+
+
+  airflow:
+    image: apache/airflow:2.5.0
+    container_name: airflow_scheduler
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__CORE__FERNET_KEY=<random_fernet_key>  # Générer une clé pour la sécurité Airflow
     volumes:
-      - ./src:/app
-      - ../alembic.ini:/app/alembic.ini  # Montez directement alembic.ini
-      - ../alembic:/app/alembic          # Montez le répertoire alembic explicitement
-      - app-data:/app/data  # Volume persistant pour les textes extraits des vidéos
+      - ./dags:/opt/airflow/dags
     ports:
-      - "8008:8008"
-    env_file:
-      - .env
+      - "8484:8484"
+    networks:
+      - shared_network
+    depends_on:
+      - kafka
+
+  kafka:
+    image: wurstmeister/kafka
+    container_name: kafka_broker
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    ports:
+      - "9092:9092"
     networks:
       - shared_network
 
-
-  celery_worker:
-    build:
-      context: ..
-      dockerfile: ./app/Dockerfile
-    container_name: celery_worker
-    command: sh -c "pip install --no-cache-dir -r requirements.txt && celery -A app.core.celery_app.celery_app worker --loglevel=info"
-    volumes:
-      - ./src:/app
-    env_file:
-      - .env
-    networks:
-      - shared_network
-
-  celery_beat:
-    build:
-      context: ..
-      dockerfile: ./app/Dockerfile
-    container_name: celery_beat
-    command: sh -c "pip install --no-cache-dir -r requirements.txt && celery -A app.core.celery_app.celery_app beat --loglevel=info"
-    volumes:
-      - ./src:/app
-    env_file:
-      - .env
+  zookeeper:
+    image: wurstmeister/zookeeper
+    container_name: zookeeper
+    ports:
+      - "2181:2181"
     networks:
       - shared_network
 
   prometheus:
     image: prom/prometheus
     container_name: prometheus_api
-    
     volumes:
       - ../prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
       - "9090:9090"
     networks:
       - shared_network
-
 
   grafana:
     image: grafana/grafana
@@ -77,7 +83,8 @@ volumes:
   app-data:
     driver: local  # Stockage pour les textes extraits des vidéos
   grafana-storage:
+    driver: local
 
 networks:
   shared_network:
-    external: true  # Utilise le réseau partagé
+    external: true

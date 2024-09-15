@@ -1,3 +1,4 @@
+# Core dependencies
 fastapi
 uvicorn
 sqlalchemy
@@ -6,21 +7,36 @@ psycopg2-binary
 yt-dlp
 transformers
 torch
-celery
-redis
+numpy
+PyYAML
+
+# Messaging and event streaming
+kafka-python
+
+# Utility and environment management
 python-dotenv
 google-api-python-client
 boto3
 prometheus-client
+
+# Authentication and user management
 fastapi-users
 fastapi-users[sqlalchemy]
 fastapi-users[redis]
-prometheus-fastapi-instrumentator
-passlib
-alembic
-bcrypt
-python-jose
-sqlmodel
 
-# client
+# Instrumentation
+prometheus-fastapi-instrumentator
+passlib[bcrypt]  # Password hashing
+
+# Database and migration
+alembic
+sqlmodel
+pydantic
+pydantic-settings
+
+# Security
+python-jose
+bcrypt
+
+# Client
 streamlit

@@ -1,7 +1,7 @@
 # app/services/s3_service.py
 import boto3
 from botocore.exceptions import NoCredentialsError
-from app.core.config import settings
+from core.config import settings
 
 class S3Service:
     def __init__(self):

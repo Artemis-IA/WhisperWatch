@@ -2,14 +2,13 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from app import crud
-from app.schemas.user import UserCreate, UserResponse
-from app.schemas.token import Token
-from app.core.security import create_access_token, verify_password
-from app.db.database import get_db
-from app.api.dependencies import get_current_user
+from schemas.user import UserCreate, UserResponse
+from schemas.token import Token
+from core.security import create_access_token, verify_password
+from db.database import get_db
+from api.dependencies import get_current_user
 from fastapi.security import OAuth2PasswordRequestForm
-from app.crud.crud_user import create_user, get_user_by_email
+from crud.crud_user import create_user, get_user_by_email
 
 router = APIRouter()
 

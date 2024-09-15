@@ -5,11 +5,11 @@ from sqlalchemy.orm import Session
 from jose import JWTError, jwt
 from pydantic import ValidationError
 
-from app.core import security
-from app.core.config import settings
-from app.core.security import ALGORITHM
-from app.db.database import get_db
-from app.models.user import User
+from core import security
+from core.config import settings
+from core.security import ALGORITHM
+from db.database import get_db
+from models.user import User
 
 from collections.abc import Generator
 from typing import Annotated
@@ -21,10 +21,10 @@ from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 from sqlalchemy.orm import Session
 
-from app.core import security
-from app.core.config import settings
-from app.db.database import sync_engine
-from app.models import TokenPayload, User
+from core import security
+from core.config import settings
+from db.database import sync_engine
+from models import TokenPayload, User
 
 reusable_oauth2 = OAuth2PasswordBearer(
     tokenUrl=f"{settings.API_V1_STR}/login/access-token"

@@ -1,7 +1,7 @@
 # app/models/user.py
 from fastapi_users_db_sqlalchemy import SQLAlchemyBaseUserTable
 from sqlalchemy import Column, Integer, String, Boolean
-from app.db.database import Base
+from db.database import Base
 
 # Define the User model with an explicit table name
 class User(SQLAlchemyBaseUserTable[int], Base):
