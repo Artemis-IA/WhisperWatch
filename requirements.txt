@@ -6,6 +6,7 @@ asyncpg
 psycopg2-binary
 yt-dlp
 transformers
+sentence-transformers
 torch
 numpy
 PyYAML

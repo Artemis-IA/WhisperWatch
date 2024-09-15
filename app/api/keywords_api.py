@@ -47,8 +47,16 @@ async def add_keywords(add_keywords: AddKeywords):
         else:
             existing_keywords = []
 
-        # Add new keywords to the list
+        # Add new keywords and expand them using related terms
         updated_keywords = list(set(existing_keywords + add_keywords.new_keywords))
+
+        for keyword in add_keywords.new_keywords:
+            # Generate related keywords using embeddings
+            related_keywords = relevance_service.generate_related_keywords(keyword, top_n=5)
+            updated_keywords.extend(related_keywords)
+
+        # Remove duplicates
+        updated_keywords = list(set(updated_keywords))
 
         # Save the updated keywords
         with open(KEYWORDS_FILE_PATH, 'w') as f:
@@ -61,3 +69,28 @@ async def add_keywords(add_keywords: AddKeywords):
         raise HTTPException(status_code=500, detail="Error decoding JSON from the file.")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error adding keywords: {str(e)}")
+
+@router.delete("/keyword", response_model=dict)
+async def delete_keyword(keyword: str):
+    try:
+        if os.path.exists(KEYWORDS_FILE_PATH):
+            with open(KEYWORDS_FILE_PATH, 'r') as f:
+                existing_keywords = json.load(f)['queries']
+        else:
+            existing_keywords = []
+
+        if keyword in existing_keywords:
+            existing_keywords.remove(keyword)
+
+            with open(KEYWORDS_FILE_PATH, 'w') as f:
+                json.dump({"queries": existing_keywords}, f)
+
+            return {"status": "Keyword deleted successfully", "keywords": existing_keywords}
+        else:
+            return {"status": "Keyword not found", "keywords": existing_keywords}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Keywords file not found.")
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Error decoding JSON from the file.")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting keyword: {str(e)}")

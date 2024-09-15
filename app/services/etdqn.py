@@ -11,7 +11,38 @@ GAMMA = 0.99  # Discount factor for future rewards
 MEMORY_SIZE = 10000
 BATCH_SIZE = 64
 
-device = th.device("cuda" if th.cuda.is_available() else "cpu")  # Define the device
+device = th.device("cuda" if th.cuda.is_available() else "cpu")
+
+class DuelingNet(nn.Module):
+    def __init__(self, input_dim, output_dim, hidden_layers, activation_fn=nn.ReLU):
+        super(DuelingNet, self).__init__()
+        
+        # Shared layers
+        self.feature = nn.Sequential(
+            nn.Linear(input_dim, hidden_layers[0]),
+            activation_fn(),
+            nn.Linear(hidden_layers[0], hidden_layers[1]),
+            activation_fn()
+        )
+        
+        # Value stream
+        self.value = nn.Sequential(
+            nn.Linear(hidden_layers[1], 1)
+        )
+        
+        # Advantage stream
+        self.advantage = nn.Sequential(
+            nn.Linear(hidden_layers[1], output_dim)
+        )
+
+    def forward(self, x):
+        x = self.feature(x)
+        value = self.value(x)
+        advantage = self.advantage(x)
+        
+        # Combine value and advantage into the final Q-value
+        q_value = value + (advantage - advantage.mean(dim=1, keepdim=True))
+        return q_value
 
 class ETDQN:
     def __init__(self, input_dim, output_dim, lr=0.005, gamma=0.9, epsilon=0.9, epsilon_decay=None):
@@ -49,11 +80,10 @@ class ETDQN:
     def learn(self):
         if len(self.memory) < self.batch_size:
             return
-        
-        # Sample batch
+
         transitions = np.random.choice(self.memory, self.batch_size)
         batch = np.array(transitions)
-        
+
         states = np.vstack(batch[:, 0])
         actions = th.LongTensor(batch[:, 1].tolist()).unsqueeze(1).to(device)
         rewards = th.FloatTensor(batch[:, 2].tolist()).unsqueeze(1).to(device)
@@ -70,9 +100,6 @@ class ETDQN:
         loss.backward()
         self.optimizer.step()
 
-        # Update epsilon
         if self.epsilon_decay:
             self.epsilon = max(0.1, self.epsilon - self.epsilon_decay)
-
-        # Target network update
         self.target_net.load_state_dict(self.eval_net.state_dict())
