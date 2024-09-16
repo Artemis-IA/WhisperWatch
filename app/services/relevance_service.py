@@ -1,65 +1,47 @@
 # app/services/relevance_service.py
-from transformers import pipeline
-from sentence_transformers import SentenceTransformer
-from core.config import settings
+
 import numpy as np
+from services.embedding_service import EmbeddingService
+from services.transcription_service import TranscriptionService
 import json
-import os
 
 class RelevanceDetectionService:
-    def __init__(self, model_name="bert-base-uncased", keywords_file="keywords.json"):
-        # Utiliser la configuration pour sélectionner le dispositif
-        device = 0 if settings.USE_GPU else -1
-        self.model = pipeline(
-            "text-classification",
-            model=model_name,
-            device=-1
-        )
+    def __init__(self, keywords_file="keywords.json"):
+        self.embedding_service = EmbeddingService()
+        self.transcription_service = TranscriptionService()
         self.load_keywords(keywords_file)
-        # Utiliser Sentence-Transformers pour générer des embeddings plus puissants
-        self.embedding_model = SentenceTransformer(
-            'sentence-transformers/all-MiniLM-L6-v2',
-            device="cpu"
-        )
 
     def load_keywords(self, keywords_file):
-        if os.path.exists(keywords_file):
-            with open(keywords_file, 'r') as f:
-                self.keywords = json.load(f)
-        else:
-            raise FileNotFoundError(f"{keywords_file} does not exist")
+        with open(keywords_file, 'r') as f:
+            self.keywords = json.load(f)
 
-    def is_relevant(self, video_metadata):
-        video_text = f"{video_metadata['title']} {video_metadata['description']}"
+    def is_relevant(self, content: str) -> bool:
+        """Check if content is relevant based on keywords and embeddings."""
+        # Chunk the content first
+        chunks = self.embedding_service.chunk_text(content)
+
+        # Keyword-based relevance check
+        for chunk in chunks:
+            for keyword in self.keywords:
+                if keyword.lower() in chunk.lower():
+                    return True
+
+        # Embedding-based relevance check
+        content_embedding = self.embedding_service.get_embedding(content)
         for keyword in self.keywords:
-            if keyword.lower() in video_text.lower():
+            keyword_embedding = self.embedding_service.get_embedding(keyword)
+            similarity = np.dot(content_embedding, keyword_embedding.T)
+            if similarity > 0.8:  # Adjust the threshold for relevance
                 return True
 
-        prediction = self.model(video_text)
-        return prediction[0]['label'] == 'RELEVANT'
+        return False
 
-    def generate_related_keywords(self, keyword, top_n=5):
-        """Generate related keywords dynamically using embeddings and external sources"""
-        # Embed the input keyword
-        keyword_vector = self.embedding_model.encode([keyword])
-        
-        # Dynamically generate similar words or phrases using embeddings
-        similar_words = self._find_similar_words(keyword_vector, top_n)
-        
-        # Optionally, extend this with related terms found via NLP models
-        return similar_words
+    def check_relevance_from_video(self, video_path: str):
+        """Extract audio, transcribe, and check relevance of video content."""
+        transcription = self.transcription_service.transcribe_video(video_path)
+        return self.is_relevant(transcription)
 
-    def _find_similar_words(self, keyword_vector, top_n=5):
-        # Supposons que nous ayons un vocabulaire pré-encodé de mots-clés courants
-        vocab = [
-            "AI", "deep learning", "neural networks", "machine learning",
-            "data science", "automation", "cloud computing", "blockchain"
-        ]  
-        vocab_vectors = self.embedding_model.encode(vocab)
-
-        # Calculer la similarité entre le mot-clé d'entrée et chaque mot du vocabulaire
-        similarities = np.dot(vocab_vectors, keyword_vector.T).flatten()
-
-        # Obtenir les top_n mots similaires
-        top_indices = np.argsort(similarities)[::-1][:top_n]
-        return [vocab[i] for i in top_indices]
+    def check_relevance_from_audio(self, audio_bytes: bytes):
+        """Transcribe and check relevance of audio content."""
+        transcription = self.transcription_service.transcribe_audio(audio_bytes)
+        return self.is_relevant(transcription)
