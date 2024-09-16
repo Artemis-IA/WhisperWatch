@@ -2,6 +2,7 @@ import secrets
 import warnings
 from typing import Annotated, Any, Literal
 from dotenv import load_dotenv
+import torch
 
 import os
 
@@ -28,10 +29,22 @@ def parse_cors(v: Any) -> list[str] | str:
     elif isinstance(v, list | str):
         return v
     raise ValueError(v)
+
+
 class Settings:
     model_config = SettingsConfigDict(
         env_file=".env", env_ignore_empty=True, extra="ignore"
     )
+
+    # Déterminer si le GPU doit être utilisé
+    use_gpu_env = os.getenv("USE_GPU")
+    if use_gpu_env is not None:
+        # Convertir la variable d'environnement en booléen
+        USE_GPU: bool = use_gpu_env.lower() in ('true', '1', 'yes')
+    else:
+        # Par défaut, utiliser torch.cuda.is_available()
+        USE_GPU: bool = torch.cuda.is_available()
+        
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str = secrets.token_urlsafe(32)
     # 60 minutes * 24 hours * 8 days = 8 days

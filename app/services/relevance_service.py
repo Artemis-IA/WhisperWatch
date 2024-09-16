@@ -1,16 +1,26 @@
 # app/services/relevance_service.py
 from transformers import pipeline
 from sentence_transformers import SentenceTransformer
+from core.config import settings
 import numpy as np
 import json
 import os
 
 class RelevanceDetectionService:
     def __init__(self, model_name="bert-base-uncased", keywords_file="keywords.json"):
-        self.model = pipeline("text-classification", model=model_name, device=0)
+        # Utiliser la configuration pour sélectionner le dispositif
+        device = 0 if settings.USE_GPU else -1
+        self.model = pipeline(
+            "text-classification",
+            model=model_name,
+            device=-1
+        )
         self.load_keywords(keywords_file)
-        # Use Sentence-Transformers to generate more powerful embeddings
-        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+        # Utiliser Sentence-Transformers pour générer des embeddings plus puissants
+        self.embedding_model = SentenceTransformer(
+            'sentence-transformers/all-MiniLM-L6-v2',
+            device="cpu"
+        )
 
     def load_keywords(self, keywords_file):
         if os.path.exists(keywords_file):
@@ -22,7 +32,7 @@ class RelevanceDetectionService:
     def is_relevant(self, video_metadata):
         video_text = f"{video_metadata['title']} {video_metadata['description']}"
         for keyword in self.keywords:
-            if keyword in video_text.lower():
+            if keyword.lower() in video_text.lower():
                 return True
 
         prediction = self.model(video_text)
@@ -40,14 +50,16 @@ class RelevanceDetectionService:
         return similar_words
 
     def _find_similar_words(self, keyword_vector, top_n=5):
-        # Let's assume we have a pre-encoded vocabulary of common keywords
-        # In practice, this could be from a large dataset or corpus like Wikipedia, Tech terms, etc.
-        vocab = ["AI", "deep learning", "neural networks", "machine learning", "data science", "automation", "cloud computing", "blockchain"]  
+        # Supposons que nous ayons un vocabulaire pré-encodé de mots-clés courants
+        vocab = [
+            "AI", "deep learning", "neural networks", "machine learning",
+            "data science", "automation", "cloud computing", "blockchain"
+        ]  
         vocab_vectors = self.embedding_model.encode(vocab)
 
-        # Calculate similarity between the input keyword and each word in the vocab
+        # Calculer la similarité entre le mot-clé d'entrée et chaque mot du vocabulaire
         similarities = np.dot(vocab_vectors, keyword_vector.T).flatten()
 
-        # Get the top_n similar words
+        # Obtenir les top_n mots similaires
         top_indices = np.argsort(similarities)[::-1][:top_n]
         return [vocab[i] for i in top_indices]
