@@ -21,11 +21,12 @@ class VideoHunterService:
                     "title": video["snippet"]["title"],
                     "description": video["snippet"]["description"],
                 }
+                # Combine title and description into a single string for relevance checking
+                content = f"{metadata['title']} {metadata['description']}"
 
                 # Check relevance using the RelevanceDetectionService
-                if self.relevance_service.is_relevant(metadata):
+                if self.relevance_service.is_relevant(content):
                     video_url = f"https://www.youtube.com/watch?v={video['id']['videoId']}"
                     logging.info(f"Relevant video found: {metadata['title']}")
                     # Schedule the video for download
                     self.download_service.consume_and_download(video_url)
-

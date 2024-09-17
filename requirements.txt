@@ -4,12 +4,14 @@ uvicorn
 sqlalchemy
 asyncpg
 psycopg2-binary
+pgvector
 yt-dlp
 transformers
 sentence-transformers
 torch
 numpy
 PyYAML
+apscheduler
 
 # Messaging and event streaming
 kafka-python
@@ -19,6 +21,7 @@ python-dotenv
 google-api-python-client
 boto3
 prometheus-client
+loguru
 
 # Authentication and user management
 fastapi-users

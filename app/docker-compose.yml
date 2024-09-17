@@ -1,6 +1,6 @@
 # app/docker-compose.yml
 
-# services:
+services:
 #   app:
 #     build:
 #       context: ..
@@ -24,50 +24,6 @@
 #       - ../app/.env
 #     networks:
 #       - shared_network
-
-  kafka:
-    image: wurstmeister/kafka:2.13-2.7.0
-    container_name: kafka_broker
-    environment:
-      KAFKA_ADVERTISED_LISTENERS: ${KAFKA_ADVERTISED_LISTENERS}
-      KAFKA_LISTENERS: ${KAFKA_LISTENERS}
-      KAFKA_ZOOKEEPER_CONNECT: ${KAFKA_ZOOKEEPER_CONNECT}
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: ${KAFKA_AUTO_CREATE_TOPICS_ENABLE}
-      KAFKA_MAX_REQUEST_SIZE: ${KAFKA_MAX_REQUEST_SIZE}
-      KAFKA_MESSAGE_MAX_BYTES: ${KAFKA_MESSAGE_MAX_BYTES}
-    ports:
-      - "9092:9092"
-    depends_on:
-      - zookeeper
-    networks:
-      - shared_network
-
-  zookeeper:
-    image: zookeeper:3.9.2
-    container_name: zookeeper
-    environment:
-      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_PORT}
-      JUTE_MAXBUFFER: ${ZOOKEEPER_JUTE_MAXBUFFER}
-    ports:
-      - "${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT}"
-    networks:
-      - shared_network
-
-  airflow:
-    image: apache/airflow:2.5.0
-    container_name: airflow_scheduler
-    environment:
-      - AIRFLOW__CORE__EXECUTOR=${AIRFLOW__CORE__EXECUTOR}
-      - AIRFLOW__CORE__FERNET_KEY=${AIRFLOW__CORE__FERNET_KEY}
-      - AIRFLOW__CORE__SQL_ALCHEMY_CONN=${DATABASE_URL}
-    volumes:
-      - ./dags:/opt/airflow/dags
-    ports:
-      - "8484:8484"
-    networks:
-      - shared_network
-    depends_on:
-      - kafka
 
 
   prometheus:

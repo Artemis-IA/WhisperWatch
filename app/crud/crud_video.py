@@ -39,6 +39,8 @@ async def create_video(db: AsyncSession, video: VideoCreate):
 
     # Proceed with downloading and processing the video
     audio_file = download_service.download_audio(video.video_url)
+    if not audio_file:
+        raise ValueError("Failed to download the audio.")
     transcript = transcription_service.transcribe_audio(audio_file)
 
     # Save and upload files

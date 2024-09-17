@@ -1,19 +1,20 @@
 # app/services/transcription_service.py
-from transformers import pipeline
-from core.config import settings
-import torch
-
+from core.models_garden import MLModelManager
 
 class TranscriptionService:
-    def __init__(self, model_name="openai/whisper-small"):
-        # Utilisez la configuration pour sélectionner le dispositif
-        device = 0 if settings.USE_GPU else -1
-        self.transcriber = pipeline(
-            "automatic-speech-recognition",
-            model=model_name,
-            device=-1
+    def __init__(self, model_name="openai/whisper-small", device: str = None):
+        self.model_name = model_name
+        self.device = device
+        self.model_manager = MLModelManager(
+            model_name=self.model_name,
+            model_type='transcription',
+            device=self.device
         )
+        self.transcriber = self.model_manager.model
 
-    def transcribe_audio(self, audio_file_path):
-        result = self.transcriber(audio_file_path)
+    def transcribe_audio(self, audio_input):
+        """Transcrit un fichier audio ou des données audio."""
+        result = self.transcriber(audio_input)
+        # Retourner le texte de la transcription
         return result['text']
+

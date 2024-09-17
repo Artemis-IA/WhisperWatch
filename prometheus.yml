@@ -3,10 +3,17 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
+  # Scrape Prometheus itself
   - job_name: "prometheus"
     static_configs:
       - targets: ["localhost:9090"]
 
-  - job_name: "api"
+  # Scrape FastAPI app metrics (assuming FastAPI app runs on port 8008)
+  - job_name: "fastapi_app"
     static_configs:
-      - targets: ["web:8000"]
+      - targets: ["localhost:8008"]  # Replace 'web' with the actual hostname or localhost
+
+  # Scrape APScheduler metrics (exposed via prometheus_client on port 8000)
+  - job_name: "apscheduler"
+    static_configs:
+      - targets: ["localhost:8009"]  # This is where you expose the APScheduler metrics

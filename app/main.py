@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from api import auth, video_api, keywords_api, relevance_api
+from api import auth, video_api, keywords_api, relevance_api, scheduler_api
 from db.database import init_db
 from prometheus_fastapi_instrumentator import Instrumentator
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -39,14 +39,8 @@ def on_shutdown():
     orchestrator.shutdown_services()
     scheduler.shutdown()
 
-# Include authentication routes
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
-
-# Include video API routes
 app.include_router(video_api.router, prefix="/api", tags=["videos"])
-
-# Include keywords API routes
 app.include_router(keywords_api.router, prefix="/keywords", tags=["keywords"])
-
-# Include relevance API routes
 app.include_router(relevance_api.router, prefix="/relevance", tags=["relevance"])
+app.include_router(scheduler_api.router, prefix="/scheduler", tags=["scheduler"])

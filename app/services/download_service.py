@@ -25,13 +25,19 @@ class DownloadService:
                 'preferredquality': '192',
             }],
             'quiet': True,
+            'PROXY': 'http://localhost:3128'
+
         }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info_dict = ydl.extract_info(youtube_url, download=True)
-            audio_file = ydl.prepare_filename(info_dict)
-            audio_file = os.path.splitext(audio_file)[0] + '.mp3'
-            return audio_file
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(youtube_url, download=True)
+                audio_file = ydl.prepare_filename(info_dict)
+                audio_file = os.path.splitext(audio_file)[0] + '.mp3'
+                return audio_file
+        except yt_dlp.utils.DownloadError as e:
+            logging.error(f"Failed to download video: {e}")
+            return None
 
     def consume_and_download(self, video_url):
         """Download videos based on URL input."""
