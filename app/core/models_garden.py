@@ -15,9 +15,6 @@ class MLModelManager:
         if torch.cuda.is_available():
             logger.info("GPU is available. Using CUDA.")
             return "cuda"
-        elif getattr(torch, "has_mps", False):
-            logger.info("Apple Silicon available. Using MPS.")
-            return "mps"
         else:
             logger.info("Using CPU.")
             return "cpu"

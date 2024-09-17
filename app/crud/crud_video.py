@@ -1,4 +1,5 @@
 # app/crud/crud_video.py
+from prometheus_client import Counter
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from models.video import Video
@@ -9,6 +10,10 @@ from services.s3_service import S3Service
 from services.youtube_service import YouTubeService
 import os
 import datetime
+
+# Prometheus counter
+video_created_counter = Counter('video_created_total', 'Total number of videos created')
+
 
 download_service = DownloadService()
 youtube_service = YouTubeService()
@@ -21,29 +26,28 @@ def make_naive(dt):
         return dt.replace(tzinfo=None)
     return dt
 
-# app/crud/crud_video.py
 async def create_video(db: AsyncSession, video: VideoCreate):
-    # Extract the YouTube ID from the video URL
+    # Vérifier si la vidéo existe déjà
+    existing_video = await db.execute(select(Video).where(Video.youtube_id == video.video_url.split('v=')[1]))
+    if existing_video.scalars().first():
+        raise ValueError(f"Video with youtube_id {video.video_url.split('v=')[1]} already exists.")
+
     youtube_id = youtube_service.extract_video_id(video.video_url)
 
-    # Fetch video details from YouTube
     video_details = youtube_service.get_video_details(video.video_url)
     
     if not video_details:
         raise ValueError("Unable to fetch video details from YouTube.")
 
-    # Extract title, description, and published_at
     title = video_details["title"]
     description = video_details["description"]
     published_at = make_naive(datetime.datetime.fromisoformat(video_details["published_at"].replace("Z", "+00:00")))
 
-    # Proceed with downloading and processing the video
     audio_file = download_service.download_audio(video.video_url)
     if not audio_file:
         raise ValueError("Failed to download the audio.")
     transcript = transcription_service.transcribe_audio(audio_file)
 
-    # Save and upload files
     transcript_file_path = f"{youtube_id}.txt"
     with open(transcript_file_path, "w") as f:
         f.write(transcript)
@@ -69,6 +73,7 @@ async def create_video(db: AsyncSession, video: VideoCreate):
     db.add(db_video)
     await db.commit()
     await db.refresh(db_video)
+    video_created_counter.inc()
     return db_video
 
 async def get_videos(db: AsyncSession, skip: int = 0, limit: int = 10):
@@ -88,6 +93,8 @@ async def update_video(db: AsyncSession, video: Video, video_update: VideoUpdate
 
 async def delete_video(db: AsyncSession, video_id: int):
     video = await get_video(db, video_id)
+    if video is None:
+        raise ValueError("Video not found")
     await db.delete(video)
     await db.commit()
     return video

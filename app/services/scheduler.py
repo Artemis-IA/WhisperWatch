@@ -1,24 +1,39 @@
 # app/services/scheduler.py
-from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.events import EVENT_JOB_EXECUTED, EVENT_JOB_ERROR
+from apscheduler.schedulers.background import BackgroundScheduler
+from services.video_hunt import VideoHunterService
+from sqlalchemy.ext.asyncio import AsyncSession
+from services.youtube_service import YouTubeService
+from services.relevance_service import RelevanceDetectionService
+from services.download_service import DownloadService
+from db.database import get_db
+import logging
 from prometheus_client import Counter, Gauge, start_http_server
 from apscheduler.triggers.interval import IntervalTrigger
 from datetime import datetime
-import logging
+from fastapi import Depends
 
 # Prometheus Metrics
 job_executed_counter = Counter('apscheduler_job_executed_total', 'Total number of jobs executed')
 job_error_counter = Counter('apscheduler_job_error_total', 'Total number of job errors')
 job_duration_gauge = Gauge('apscheduler_job_duration_seconds', 'Duration of job execution')
 
+# Initialisation des services
+youtube_service = YouTubeService()
+relevance_service = RelevanceDetectionService()
+download_service = DownloadService()
+video_hunter = VideoHunterService(
+    youtube_service=youtube_service,
+    relevance_service=relevance_service,
+    download_service=download_service
+)
+
 class Scheduler:
     def __init__(self):
         self.scheduler = BackgroundScheduler()
         logging.basicConfig(level=logging.INFO)
         self.scheduler.add_listener(self.job_listener, EVENT_JOB_EXECUTED | EVENT_JOB_ERROR)
-        
-        # Expose Prometheus metrics endpoint
-        start_http_server(8009)
+        start_http_server(8009)  # Expose Prometheus metrics
 
     def start(self):
         """Start the scheduler."""
@@ -60,21 +75,22 @@ class Scheduler:
             if hasattr(event, 'duration'):
                 job_duration_gauge.set(event.duration)  # Set duration in seconds
 
+# Exemple de tâche planifiée qui chasse les vidéos
+async def scheduled_video_hunt_task():
+    async with get_db() as db:  # Generate the db session dynamically
+        logging.info(f"Running scheduled video hunt task at {datetime.now()}...")
+        keywords = relevance_service.keywords  # Charger les mots-clés du fichier JSON ou de la BDD
+        await video_hunter.hunt_videos(db, keywords)
 
-# Global scheduler instance
+# Démarrage du scheduler
 scheduler = Scheduler()
 
-# Example scheduled task (modify as needed)
-def scheduled_download_task():
-    logging.info(f"Running scheduled download task at {datetime.now()}...")
-
-# Adding an initial job for demonstration purposes
 scheduler.add_job(
-    scheduled_download_task,
-    IntervalTrigger(minutes=10),
+    scheduled_video_hunt_task,
+    trigger=IntervalTrigger(minutes=30),
     job_id='video_hunt_job',
-    name='Video hunt and download every 10 minutes',
+    name='Video hunt and download every 30 minutes',
     replace_existing=True
 )
-scheduler.start()
 
+scheduler.start()
