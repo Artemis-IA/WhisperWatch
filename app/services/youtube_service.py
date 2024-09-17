@@ -1,5 +1,6 @@
 # app/services/youtube_service.py
 from googleapiclient.discovery import build
+from datetime import datetime, timedelta
 from core.config import settings
 
 class YouTubeService:
@@ -43,14 +44,19 @@ class YouTubeService:
             return None
 
 
-    def search_videos(self, query, max_results=10):
+    def search_videos(self, query, max_results=10, days_ago=30):
+        """Search for recent videos based on a query and filter by date."""
+        # Filtrer les vidéos postées dans les 30 derniers jours
+        published_after = (datetime.now() - timedelta(days=days_ago)).isoformat("T") + "Z"
+        
         request = self.youtube.search().list(
             q=query,
             part="id,snippet",
             maxResults=max_results,
             type="video",
-            order="date"
+            order="date",  # Trier par date ou par pertinence (relevance)
+            publishedAfter=published_after
         )
+        
         response = request.execute()
         return response.get("items", [])
-    

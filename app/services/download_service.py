@@ -1,18 +1,15 @@
 # app/services/download_service.py
-
 import yt_dlp
 import os
 import re
 import logging
-from db.s3 import S3
+import soundfile as sf
 
 class DownloadService:
     YOUTUBE_URL_REGEX = re.compile(r'^(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/.+$')
 
     def __init__(self, download_path='downloads'):
         self.download_path = download_path
-        self.s3 = S3()  # Initialize S3 service
-        
         if not os.path.exists(download_path):
             os.makedirs(download_path)
 
@@ -27,6 +24,7 @@ class DownloadService:
                 'preferredquality': '192',
             }],
             'quiet': True,
+            'PROXY': 'http://localhost:3128'
         }
 
         try:
@@ -34,17 +32,25 @@ class DownloadService:
                 info_dict = ydl.extract_info(youtube_url, download=True)
                 audio_file = ydl.prepare_filename(info_dict)
                 audio_file = os.path.splitext(audio_file)[0] + '.mp3'
+
+                # Vérifier que le fichier existe
+                if not os.path.exists(audio_file):
+                    raise Exception(f"Audio file not found after download: {audio_file}")
                 
-                # Upload the file to S3/MinIO
-                object_name = f"audio/{os.path.basename(audio_file)}"
-                file_url = self.s3.upload_file(audio_file, object_name)
-                
-                if os.path.exists(audio_file):
-                    os.remove(audio_file)
-                
-                return file_url  # Return the file URL from S3/MinIO
+                # Vérifier si le fichier audio est valide
+                try:
+                    with sf.SoundFile(audio_file) as f:
+                        logging.info(f"Audio file is valid with format {f.format}")
+                except Exception as e:
+                    raise Exception(f"Invalid audio file: {e}")
+
+                return audio_file
+
         except yt_dlp.utils.DownloadError as e:
             logging.error(f"Failed to download audio: {e}")
+            return None
+        except Exception as e:
+            logging.error(f"Error processing audio file: {e}")
             return None
 
     def consume_and_download(self, video_url):

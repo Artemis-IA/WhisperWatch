@@ -1,13 +1,12 @@
 # app/services/orchestrator.py
 import logging
+import asyncio
 from services.download_service import DownloadService
 from services.video_hunt import VideoHunterService
 from services.relevance_service import RelevanceDetectionService
 from services.youtube_service import YouTubeService
 from apscheduler.schedulers.background import BackgroundScheduler
-from db.database import get_db  # Assurez-vous que cette fonction est définie pour récupérer la session DB
-from sqlalchemy.ext.asyncio import AsyncSession
-import asyncio
+from db.database import get_db
 
 class ServiceOrchestrator:
     def __init__(self):
@@ -18,9 +17,9 @@ class ServiceOrchestrator:
         self.video_hunter = VideoHunterService(
             youtube_service=self.youtube_service,
             relevance_service=self.relevance_service,
-            download_service=self.download_service)
-        
-        logging.info("Services initialized.")
+            download_service=self.download_service
+        )
+        self.lock = asyncio.Lock()
 
     async def start_video_hunt(self):
         """Start hunting for videos."""
@@ -28,7 +27,7 @@ class ServiceOrchestrator:
         logging.info(f"Starting video hunt with keywords: {keywords}")
 
         # Obtenir une session de base de données
-        async for db in get_db():  # Utilisation explicite de l'async generator
+        async with get_db() as db:
             await self.video_hunter.hunt_videos(db, keywords)
 
     def schedule_tasks(self, minutes_interval=5):
@@ -39,7 +38,7 @@ class ServiceOrchestrator:
             trigger='interval',
             minutes=minutes_interval,
             id='video_hunt_job',
-            name=f'Hunt for relevant videos every {minutes_interval} minutes', 
+            name=f'Hunt for relevant videos every {minutes_interval} minutes',
             replace_existing=True
         )
         scheduler.start()
@@ -51,4 +50,5 @@ class ServiceOrchestrator:
 
     def start_video_hunt_wrapper(self):
         """Wrapper pour appeler la tâche async dans un job APScheduler"""
-        asyncio.run(self.start_video_hunt())  # Exécute la méthode async
+        import asyncio
+        asyncio.run(self.start_video_hunt())

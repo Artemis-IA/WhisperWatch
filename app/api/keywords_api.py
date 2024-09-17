@@ -10,7 +10,7 @@ router = APIRouter()
 KEYWORDS_FILE_PATH = "keywords.json"
 
 class KeywordUpdate(BaseModel):
-    queries: list[str]
+    keywords: list[str]
 
 class AddKeywords(BaseModel):
     new_keywords: list[str]
@@ -21,7 +21,7 @@ async def get_keywords():
     if os.path.exists(KEYWORDS_FILE_PATH):
         with open(KEYWORDS_FILE_PATH, 'r') as f:
             data = json.load(f)
-            return data['queries']
+            return data['keywords']
     else:
         raise HTTPException(status_code=404, detail="Keywords file not found.")
 
@@ -30,8 +30,8 @@ async def update_keywords(keywords: KeywordUpdate):
     """Update the search keywords."""
     try:
         with open(KEYWORDS_FILE_PATH, 'w') as f:
-            json.dump({"queries": keywords.queries}, f)
-        return keywords.queries
+            json.dump({"keywords": keywords.keywords}, f)
+        return keywords.keywords
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error updating keywords: {str(e)}")
 
@@ -43,7 +43,7 @@ async def add_keywords(add_keywords: AddKeywords):
         # Load existing keywords
         if os.path.exists(KEYWORDS_FILE_PATH):
             with open(KEYWORDS_FILE_PATH, 'r') as f:
-                existing_keywords = json.load(f)['queries']
+                existing_keywords = json.load(f)['keywords']
         else:
             existing_keywords = []
 
@@ -60,7 +60,7 @@ async def add_keywords(add_keywords: AddKeywords):
 
         # Save the updated keywords
         with open(KEYWORDS_FILE_PATH, 'w') as f:
-            json.dump({"queries": updated_keywords}, f)
+            json.dump({"keywords": updated_keywords}, f)
 
         return {"status": "Keywords added successfully", "keywords": updated_keywords}
     except FileNotFoundError:
@@ -75,7 +75,7 @@ async def delete_keyword(keyword: str):
     try:
         if os.path.exists(KEYWORDS_FILE_PATH):
             with open(KEYWORDS_FILE_PATH, 'r') as f:
-                existing_keywords = json.load(f)['queries']
+                existing_keywords = json.load(f)['keywords']
         else:
             existing_keywords = []
 
@@ -83,7 +83,7 @@ async def delete_keyword(keyword: str):
             existing_keywords.remove(keyword)
 
             with open(KEYWORDS_FILE_PATH, 'w') as f:
-                json.dump({"queries": existing_keywords}, f)
+                json.dump({"keywords": existing_keywords}, f)
 
             return {"status": "Keyword deleted successfully", "keywords": existing_keywords}
         else:
