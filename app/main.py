@@ -5,6 +5,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from apscheduler.schedulers.background import BackgroundScheduler
 from services.orchestrator import ServiceOrchestrator
 from dotenv import load_dotenv
+import logging
 
 # Load environment variables
 load_dotenv()
@@ -23,18 +24,13 @@ scheduler = BackgroundScheduler()
 
 @app.on_event("startup")
 def on_startup():
-    # Initialize the database
     init_db()
-
-    # Start orchestrating the services
     orchestrator.schedule_tasks()
-
-    # Schedule automated tasks using APScheduler
     scheduler.start()
+    logging.info("APScheduler started.")
 
 @app.on_event("shutdown")
 def on_shutdown():
-    # Clean shutdown when FastAPI stops
     print("Shutting down APIntelligence...")
     orchestrator.shutdown_services()
     scheduler.shutdown()

@@ -27,7 +27,6 @@ class DownloadService:
                 'preferredquality': '192',
             }],
             'quiet': True,
-            'PROXY': 'http://localhost:3128'
         }
 
         try:

@@ -7,6 +7,7 @@ from services.youtube_service import YouTubeService
 from apscheduler.schedulers.background import BackgroundScheduler
 from db.database import get_db  # Assurez-vous que cette fonction est définie pour récupérer la session DB
 from sqlalchemy.ext.asyncio import AsyncSession
+import asyncio
 
 class ServiceOrchestrator:
     def __init__(self):
@@ -25,9 +26,9 @@ class ServiceOrchestrator:
         """Start hunting for videos."""
         keywords = self.relevance_service.keywords
         logging.info(f"Starting video hunt with keywords: {keywords}")
-        
+
         # Obtenir une session de base de données
-        async with get_db() as db:
+        async for db in get_db():  # Utilisation explicite de l'async generator
             await self.video_hunter.hunt_videos(db, keywords)
 
     def schedule_tasks(self, minutes_interval=5):
@@ -50,5 +51,4 @@ class ServiceOrchestrator:
 
     def start_video_hunt_wrapper(self):
         """Wrapper pour appeler la tâche async dans un job APScheduler"""
-        import asyncio
         asyncio.run(self.start_video_hunt())  # Exécute la méthode async
